@@ -106,6 +106,16 @@ class Game:
 
         # Text and Soundeffects/Music
         self.font = pygame.font.SysFont("comicsans", 100)
+        self.start_sound = mixer.Sound("Zombie shooter\start sound.mp3")
+        self.music_1 = mixer.Sound("Zombie shooter\music_1.mp3")
+        self.fight_sound = mixer.Sound("Zombie shooter\Fight short.mp3")
+        self.sword_sound = mixer.Sound("Zombie shooter\Sword Hit Soundeffect.mp3")
+        self.walk_sound = mixer.Sound("Zombie shooter\Footsteps_Naruto_Soundeffect.wav")
+        self.death_sound = mixer.Sound("Zombie shooter\Death Soundeffect.mp3")
+        self.gras_landing_sound = mixer.Sound("Zombie shooter\Gras on platform Soundeffect.mp3 ")
+        self.landing_sound = mixer.Sound("Zombie shooter\landing Soundeffect short.mp3")
+        self.jump_sound = mixer.Sound("Zombie shooter\Jump Soundeffect.mp3")
+        
 
         # Other declarations
         self.x = -180
@@ -134,7 +144,13 @@ class Game:
         self.is_attacking = False
         self.sound_has_played = False
         self.future_hero_pos = 0
-   
+        self.flipped_stand = False
+        self.delay = 120
+        self.delay_bool = False
+        self.hero_attack_hitbox_x = 250
+        self.counter = 99
+        self.stand = False
+        
 
 
         # Sprite lists Hero
@@ -169,11 +185,9 @@ class Game:
         for x in range(self.animation_steps_enemy_take_hit):
             self.animation_list_enemy_take_hit.append(self.enemy_sprite_take_hit.get_image(x, 200, 200 , 2.4, self.BLACK))
 
-        self.start_sound = mixer.Sound("Zombie shooter\start sound.mp3")
+        
         self.start_sound.play(0)
-        self.music_1 = mixer.Sound("Zombie shooter\music_1.mp3")
         self.music_1.play(0)
-        self.fight_sound = mixer.Sound("Zombie shooter\Fight short.mp3")
         self.fight_sound.play(0)
 
         # Game-Loop:
@@ -259,11 +273,14 @@ class Game:
 
            
 
+
+
+
+
             
 
             #self.screen.blit(self.starting_label, (338, 180))
             #self.screen.blit(self.starting_label_2, (275, 300))
-            
 
             # Looks for Quitting the game
             for event in pygame.event.get():   
@@ -271,12 +288,16 @@ class Game:
                     self.running = False  
             
             
-    # HITBOXES:
+    # HITBOXES:a
             # HERO:
             self.hero_hitbox = pygame.Rect(self.x+205, self.y+180, 70, 120)
             #pygame.draw.rect(self.screen,(255,0,0),self.hero_hitbox,3)
-            self.hero_attack_hitbox = pygame.Rect(self.x+250, self.y+155, 150, 140)
-            #pygame.draw.rect(self.screen,(0,255,0),self.hero_attack_hitbox,3)
+            if self.flipped_stand:
+                self.hero_attack_hitbox = pygame.Rect(self.x+60, self.y+155, 140, 140)
+            else:
+                self.hero_attack_hitbox = pygame.Rect(self.x+250, self.y+155, 140, 140)
+            pygame.draw.rect(self.screen,(0,255,0),self.hero_attack_hitbox,3)
+
 
             # ENEMY:
             self.enemy_hitbox = pygame.Rect(self.enemy_x+205, self.enemy_y+180, 70, 120)
@@ -293,7 +314,7 @@ class Game:
     # ENEMY CONTROLS:
    
              # Collision
-            if self.hero_attack_hitbox.colliderect(self.enemy_hitbox) and self.attacks == True:
+            if self.hero_attack_hitbox.colliderect(self.enemy_hitbox) and self.attacks or self.hero_attack_hitbox.colliderect(self.enemy_hitbox) and self.attacks_fliped == True:
                 self.attack_hit = True
 
             elif self.attack_hit == True:
@@ -306,7 +327,6 @@ class Game:
                             self.enemy_lives -= 1
                             self.red_health_bar_enemy_x -= 5
                             self.red_health_bar_enemy_width += 5
-                            self.sword_sound = mixer.Sound("Zombie shooter\Sword Hit Soundeffect.mp3")
                             self.sword_sound.play(0)
                             self.attack_hit = False
                             print("self.enemy_lives: ")
@@ -325,10 +345,8 @@ class Game:
                     self.screen.blit(self.animation_list_enemy_death[5], (self.enemy_x, self.enemy_y)) 
                     self.last_update_2 = self.current_time_2
                     self.attack_hit = False
-                    enemy_dies = False
                     print("du hs")
                     if self.sound_has_played == False:
-                        self.death_sound = mixer.Sound("Zombie shooter\Death Soundeffect.mp3")
                         self.death_sound.play(0)
                         self.sound_has_played = True
 
@@ -382,7 +400,6 @@ class Game:
                     self.y = 116
                     self.on_platform = True
                     self.is_jumping = False
-                    self.gras_landing_sound = mixer.Sound("Zombie shooter\Gras on platform Soundeffect.mp3 ")
                     self.gras_landing_sound.play(0)
 
                 elif self.jump_dy >= -self.jump_span:
@@ -419,7 +436,6 @@ class Game:
                     
                 
                 else:
-                    self.landing_sound = mixer.Sound("Zombie shooter\landing Soundeffect short.mp3")
                     self.landing_sound.play(0)
                     self.is_jumping = False
                     self.jump_dy = self.jump_span
@@ -476,15 +492,16 @@ class Game:
                         self.y = 327
                         self.jump_dy = self.jump_span
                         self.not_on_platform = False
-                        self.landing_sound = mixer.Sound("Zombie shooter\landing Soundeffect short.mp3")
                         self.landing_sound.play(0)
 
             # Jump
             elif self.pressed[pygame.K_SPACE]:
                 self.is_jumping = True
                 self.screen.blit(self.animation_list_stand[self.frame_stand], (self.x, self.y))
-                self.jump_sound = mixer.Sound("Zombie shooter\Jump Soundeffect.mp3")
                 self.jump_sound.play(0)
+                self.stand = True 
+                self.walk_sound.stop()
+                self.counter = 99
         
             # Attack
             elif self.attacks:
@@ -492,19 +509,30 @@ class Game:
             
             # Walk right
             elif self.pressed[pygame.K_d]:
+                self.flipped_stand = False
                 if event.type == pygame.MOUSEBUTTONDOWN: 
                    self.attack()
+                   
                 elif self.x > self.scren_width-200:  
                     self.x = -200
                     self.screen.blit(self.animation_list_run[self.frame_run], (self.x, self.y))
                     
                 else:
+                    self.stand = False 
                     self.x += 6
                     self.screen.blit(self.animation_list_run[self.frame_run], (self.x, self.y))
+                    self.counter +=1
+                    if self.counter % 100 == 0 and self.stand == False:
+                        self.walk_sound.stop()
+                        self.walk_sound.play(0)
+                        
+                        
+
               
                    
             # Walk left
             elif self.pressed[pygame.K_a]:
+                self.flipped_stand = True
                 if event.type == pygame.MOUSEBUTTONDOWN: 
                     self.fliped_attack()
                 elif self.x < -250:
@@ -513,19 +541,36 @@ class Game:
                     self.flip_image.set_colorkey(self.BLACK)
                     self.screen.blit(self.flip_image, (self.x, self.y))
                 else:
+                    self.stand = False 
                     self.x -= 6
                     self.flip_image = pygame.transform.flip(self.animation_list_run[self.frame_run], True, False)
                     self.flip_image.set_colorkey(self.BLACK)
                     self.screen.blit(self.flip_image, (self.x, self.y))
+                    self.counter +=1
+                    if self.counter % 100 == 0 and self.stand == False:
+                        self.walk_sound.stop()
+                        self.walk_sound.play(0)
 
             # Attack 1
             elif event.type == pygame.MOUSEBUTTONDOWN or self.is_attacking == True: 
-                self.attack()
+                if self.flipped_stand == True:
+                    self.fliped_attack()
+                else:
+                    self.attack()
 
             # Stand still
-            else: 
-                self.screen.blit(self.animation_list_stand[self.frame_stand], (self.x, self.y))
+            else:
+                self.stand = True 
+                self.walk_sound.stop()
+                self.counter = 99
+                if self.flipped_stand == True:
+                    self.flip_image_stand = pygame.transform.flip(self.animation_list_stand[self.frame_stand], True, False)
+                    self.flip_image_stand.set_colorkey(self.BLACK)
+                    self.screen.blit(self.flip_image_stand, (self.x, self.y))
 
+                else:
+                    self.screen.blit(self.animation_list_stand[self.frame_stand], (self.x, self.y))
+                    
 
 
             # Update Display
@@ -535,10 +580,9 @@ class Game:
     def attack(self):
         self.current_time_2 = pygame.time.get_ticks()
         self.attacks = True
-        print("self.frame_attack_1:")
-        print(self.frame_attack_1)
+        #print("self.frame_attack_1:")
+        #print(self.frame_attack_1)
         self.is_attacking = True
- 
         if self.attacks:
             #print(self.frame_attack_1)
             self.screen.blit(self.animation_list_attack_1[self.frame_attack_1], (self.x, self.y))
@@ -553,13 +597,16 @@ class Game:
         flip_image_attack = pygame.transform.flip(self.animation_list_attack_1[self.frame_attack_1], True, False)
         flip_image_attack.set_colorkey(self.BLACK)
         self.current_time_2 = pygame.time.get_ticks()
+        print("self.attacks_fliped")
+        print(self.attacks_fliped)
         self.attacks_fliped = True
         self.is_attacking = True
         if self.attacks_fliped:
             self.screen.blit(flip_image_attack, (self.x, self.y))
             if self.frame_attack_1 == 3:
                 self.attacks_fliped = False
-            self.is_attacking = True
+                self.is_attacking = False
+                
 
 
 def scale_image(img, scale):
